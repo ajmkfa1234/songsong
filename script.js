@@ -26,6 +26,7 @@ function getLocalRanking() {
     return Array.isArray(saved) ? saved.filter((item) =>
       Number.isFinite(Number(item.score))
     ).map((item) => ({
+      name: typeof item.name === "string" ? item.name : "익명",
       score: Number(item.score),
       date: typeof item.date === "string" ? item.date : ""
     })).sort((a, b) => b.score - a.score).slice(0, RANKING_LIMIT) : [];
@@ -34,9 +35,10 @@ function getLocalRanking() {
   }
 }
 
-function saveLocalScore(finalScore) {
+function saveLocalScore(name, finalScore) {
   const ranking = getLocalRanking();
   ranking.push({
+    name,
     score: finalScore,
     date: new Date().toLocaleDateString("ko-KR", {
       month: "short",
@@ -44,11 +46,7 @@ function saveLocalScore(finalScore) {
     })
   });
   ranking.sort((a, b) => b.score - a.score);
-  try {
-    localStorage.setItem(RANKING_KEY, JSON.stringify(ranking.slice(0, RANKING_LIMIT)));
-  } catch {
-    return ranking.slice(0, RANKING_LIMIT);
-  }
+  localStorage.setItem(RANKING_KEY, JSON.stringify(ranking.slice(0, RANKING_LIMIT)));
   return ranking.slice(0, RANKING_LIMIT);
 }
 
@@ -64,11 +62,22 @@ function renderRanking() {
   ranking.forEach((record, index) => {
     const item = document.createElement("li");
     item.className = "ranking-item";
-    item.innerHTML = `
-      <span class="ranking-position">${index + 1}</span>
-      <span class="ranking-date">${record.date || "이전 기록"}</span>
-      <strong class="ranking-score">${record.score}점</strong>
-    `;
+    const position = document.createElement("span");
+    position.className = "ranking-position";
+    position.textContent = index + 1;
+    const details = document.createElement("span");
+    details.className = "ranking-details";
+    const name = document.createElement("strong");
+    name.className = "ranking-name";
+    name.textContent = record.name;
+    const date = document.createElement("span");
+    date.className = "ranking-date";
+    date.textContent = record.date || "이전 기록";
+    details.append(name, date);
+    const score = document.createElement("strong");
+    score.className = "ranking-score";
+    score.textContent = `${record.score}점`;
+    item.append(position, details, score);
     rankingList.appendChild(item);
   });
 }
@@ -141,12 +150,12 @@ function finishGame() {
   dragging = false;
   document.getElementById("finalScore").textContent = score;
   document.getElementById("resultTitle").textContent = score >= 100 ? "대단한 솜씨예요!" : "수고했어요!";
-  const ranking = saveLocalScore(score);
-  const bestScore = ranking.length ? ranking[0].score : score;
-  const rank = getRank(ranking, score);
-  document.getElementById("resultRanking").textContent =
-    rank ? `이번 기록 ${rank}위 · 최고 점수 ${bestScore}점` : `최고 점수 ${bestScore}점`;
+  document.getElementById("playerName").value = "";
+  document.getElementById("resultForm").hidden = false;
+  document.getElementById("resultRanking").hidden = true;
+  document.getElementById("playAgainButton").hidden = true;
   resultDialog.showModal();
+  document.getElementById("playerName").focus();
 }
 
 function getCellFromPoint(clientX, clientY) {
@@ -251,6 +260,40 @@ boardElement.addEventListener("pointerleave", (event) => {
 boardElement.addEventListener("contextmenu", (event) => event.preventDefault());
 
 document.getElementById("newGameButton").addEventListener("click", startGame);
+document.getElementById("resultForm").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const nameInput = document.getElementById("playerName");
+  const name = nameInput.value.trim();
+  if (!name) {
+    nameInput.setCustomValidity("이름을 입력해 주세요.");
+    nameInput.reportValidity();
+    return;
+  }
+
+  nameInput.setCustomValidity("");
+  let ranking;
+  try {
+    ranking = saveLocalScore(name, score);
+  } catch {
+    const resultRanking = document.getElementById("resultRanking");
+    resultRanking.textContent = "랭킹 저장에 실패했어요. 브라우저 저장 공간을 확인해 주세요.";
+    resultRanking.hidden = false;
+    return;
+  }
+
+  const bestScore = ranking.length ? ranking[0].score : score;
+  const rank = getRank(ranking, score);
+  const resultRanking = document.getElementById("resultRanking");
+  resultRanking.textContent =
+    rank ? `이번 기록 ${rank}위 · 최고 점수 ${bestScore}점` : `최고 점수 ${bestScore}점`;
+  resultRanking.hidden = false;
+  document.getElementById("resultForm").hidden = true;
+  document.getElementById("playAgainButton").hidden = false;
+});
+document.getElementById("playerName").addEventListener("input", (event) => {
+  event.currentTarget.setCustomValidity("");
+});
+resultDialog.addEventListener("cancel", (event) => event.preventDefault());
 document.getElementById("playAgainButton").addEventListener("click", () => {
   resultDialog.close();
   startGame();

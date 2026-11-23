@@ -63,8 +63,13 @@
       <p class="eyebrow">게임 종료</p>
       <h2 id="resultTitle">수고했어요!</h2>
       <div class="final-score"><span>최종 점수</span><strong id="finalScore">0</strong></div>
-      <p class="result-ranking" id="resultRanking">최고 점수 0점</p>
-      <button class="primary-button wide" id="playAgainButton" type="button">다시 하기</button>
+      <form class="result-form" id="resultForm">
+        <label for="playerName">랭킹에 표시할 이름</label>
+        <input id="playerName" name="playerName" type="text" maxlength="20" autocomplete="nickname" placeholder="이름을 입력해 주세요" required>
+        <button class="primary-button wide" type="submit">랭킹 저장</button>
+      </form>
+      <p class="result-ranking" id="resultRanking" hidden></p>
+      <button class="primary-button wide" id="playAgainButton" type="button" hidden>다시 하기</button>
     </div>
   </dialog>
 
