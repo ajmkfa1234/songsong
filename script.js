@@ -7,6 +7,10 @@ const timerElement = document.getElementById("timer");
 const selectionSumElement = document.getElementById("selectionSum");
 const helpDialog = document.getElementById("helpDialog");
 const resultDialog = document.getElementById("resultDialog");
+const rankingDialog = document.getElementById("rankingDialog");
+const rankingList = document.getElementById("rankingList");
+const RANKING_KEY = "appleGameLocalRanking";
+const RANKING_LIMIT = 10;
 
 let board = [];
 let score = 0;
@@ -15,6 +19,64 @@ let timerId = null;
 let dragging = false;
 let selectedCells = [];
 let hasStarted = false;
+
+function getLocalRanking() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(RANKING_KEY) || "[]");
+    return Array.isArray(saved) ? saved.filter((item) =>
+      Number.isFinite(Number(item.score))
+    ).map((item) => ({
+      score: Number(item.score),
+      date: typeof item.date === "string" ? item.date : ""
+    })).sort((a, b) => b.score - a.score).slice(0, RANKING_LIMIT) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveLocalScore(finalScore) {
+  const ranking = getLocalRanking();
+  ranking.push({
+    score: finalScore,
+    date: new Date().toLocaleDateString("ko-KR", {
+      month: "short",
+      day: "numeric"
+    })
+  });
+  ranking.sort((a, b) => b.score - a.score);
+  try {
+    localStorage.setItem(RANKING_KEY, JSON.stringify(ranking.slice(0, RANKING_LIMIT)));
+  } catch {
+    return ranking.slice(0, RANKING_LIMIT);
+  }
+  return ranking.slice(0, RANKING_LIMIT);
+}
+
+function renderRanking() {
+  const ranking = getLocalRanking();
+  rankingList.innerHTML = "";
+
+  if (!ranking.length) {
+    rankingList.innerHTML = '<li class="ranking-empty">아직 저장된 기록이 없어요.</li>';
+    return;
+  }
+
+  ranking.forEach((record, index) => {
+    const item = document.createElement("li");
+    item.className = "ranking-item";
+    item.innerHTML = `
+      <span class="ranking-position">${index + 1}</span>
+      <span class="ranking-date">${record.date || "이전 기록"}</span>
+      <strong class="ranking-score">${record.score}점</strong>
+    `;
+    rankingList.appendChild(item);
+  });
+}
+
+function getRank(ranking, finalScore) {
+  const index = ranking.findIndex((record) => record.score === finalScore);
+  return index >= 0 ? index + 1 : null;
+}
 
 function randomApple() {
   return Math.floor(Math.random() * 9) + 1;
@@ -79,6 +141,11 @@ function finishGame() {
   dragging = false;
   document.getElementById("finalScore").textContent = score;
   document.getElementById("resultTitle").textContent = score >= 100 ? "대단한 솜씨예요!" : "수고했어요!";
+  const ranking = saveLocalScore(score);
+  const bestScore = ranking.length ? ranking[0].score : score;
+  const rank = getRank(ranking, score);
+  document.getElementById("resultRanking").textContent =
+    rank ? `이번 기록 ${rank}위 · 최고 점수 ${bestScore}점` : `최고 점수 ${bestScore}점`;
   resultDialog.showModal();
 }
 
@@ -190,6 +257,18 @@ document.getElementById("playAgainButton").addEventListener("click", () => {
 });
 document.getElementById("helpButton").addEventListener("click", () => helpDialog.showModal());
 document.getElementById("closeHelpButton").addEventListener("click", () => helpDialog.close());
+document.getElementById("rankingButton").addEventListener("click", () => {
+  renderRanking();
+  rankingDialog.showModal();
+});
+document.getElementById("closeRankingButton").addEventListener("click", () => rankingDialog.close());
+document.getElementById("clearRankingButton").addEventListener("click", () => {
+  if (!getLocalRanking().length) return;
+  if (window.confirm("저장된 로컬 랭킹을 모두 삭제할까요?")) {
+    localStorage.removeItem(RANKING_KEY);
+    renderRanking();
+  }
+});
 document.getElementById("startFromHelpButton").addEventListener("click", () => {
   helpDialog.close();
   startGame();

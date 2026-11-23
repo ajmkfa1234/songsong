@@ -42,6 +42,7 @@ button { font: inherit; }
 }
 
 .brand { display: flex; align-items: center; gap: 12px; }
+.topbar-actions { display: flex; gap: 8px; }
 .brand-mark {
   width: 48px; height: 48px;
   display: grid; place-items: center;
@@ -270,6 +271,37 @@ dialog p { color: var(--muted); font-size: 14px; line-height: 1.7; }
 .final-score { width: 160px; margin: 22px auto; padding: 14px; border: 1px solid var(--line); border-radius: 5px; background: var(--cream); }
 .final-score span { display: block; color: var(--muted); font-size: 12px; }
 .final-score strong { color: var(--red); font-family: "Jua", sans-serif; font-size: 38px; }
+.result-ranking { margin: -8px 0 18px; color: var(--ink); font-weight: 800; }
+.ranking-content { padding: 28px 24px 24px; }
+.ranking-list {
+  min-height: 220px;
+  margin: 18px 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+.ranking-item {
+  min-height: 54px;
+  display: grid;
+  grid-template-columns: 38px 1fr auto;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+}
+.ranking-position {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--muted);
+  background: var(--cream);
+  font-family: "Jua", sans-serif;
+}
+.ranking-item:first-child .ranking-position { color: white; background: var(--red); }
+.ranking-score { color: var(--red); font-family: "Jua", sans-serif; font-size: 20px; }
+.ranking-date { color: var(--muted); font-size: 12px; }
+.ranking-empty { display: grid; min-height: 220px; place-items: center; color: var(--muted); text-align: center; }
+.secondary-button { color: var(--ink); border: 1px solid var(--line); background: var(--cream); }
 
 @media (max-width: 560px) {
   .app-shell { padding: 10px 8px 16px; }
